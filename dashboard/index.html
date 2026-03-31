@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wispr Clone</title>
+<style>
+  :root {
+    --bg:        #050b14;
+    --surface:   #0d1b2a;
+    --surface2:  #112233;
+    --border:    #1a3a5c;
+    --cyan:      #00d4ff;
+    --purple:    #7b2fff;
+    --green:     #00ff9f;
+    --red:       #ff3366;
+    --text:      #c8d8e8;
+    --muted:     #3a5068;
+    --font:      'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Titlebar ── */
+  #titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 44px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+    flex-shrink: 0;
+  }
+  #titlebar .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  #titlebar .logo svg { width: 20px; height: 20px; }
+  #titlebar .version {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── Main layout ── */
+  #app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 72px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 18px;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
+  .nav-btn.active {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--cyan);
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.15);
+  }
+  .nav-spacer { flex: 1; }
+
+  /* ── Content ── */
+  #content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  /* ── Status Panel ── */
+  #status-panel {
+    padding: 28px;
+    gap: 20px;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  /* Status card */
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .status-orb {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .status-orb.idle   { border-color: var(--muted); }
+  .status-orb.recording {
+    border-color: var(--red);
+    box-shadow: 0 0 20px rgba(255,51,102,0.4);
+    animation: pulse-red 1s ease-in-out infinite;
+  }
+  .status-orb.processing {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,212,255,0.4);
+    animation: pulse-cyan 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 15px rgba(255,51,102,0.3); }
+    50%      { box-shadow: 0 0 30px rgba(255,51,102,0.7); }
+  }
+  @keyframes pulse-cyan {
+    0%,100% { box-shadow: 0 0 15px rgba(0,212,255,0.3); }
+    50%      { box-shadow: 0 0 30px rgba(0,212,255,0.7); }
+  }
+  .status-info h2 { font-size: 22px; font-weight: 600; color: var(--text); }
+  .status-info p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .hotkey-badge {
+    margin-left: auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  /* Waveform card */
+  .wave-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    flex-shrink: 0;
+  }
+  #waveform {
+    width: 100%;
+    height: 72px;
+    display: block;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--cyan); }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.purple { color: var(--purple); }
+
+  /* ── History Panel ── */
+  #history-panel { padding: 28px; gap: 16px; }
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+  }
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .history-item:hover {
+    border-color: rgba(0,212,255,0.3);
+    background: var(--surface2);
+  }
+  .history-item:hover .copy-hint { opacity: 1; }
+  .history-num {
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    color: var(--muted);
+    padding-top: 2px;
+    min-width: 24px;
+  }
+  .history-text {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .history-time {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .copy-hint {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--cyan);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state .icon { font-size: 40px; opacity: 0.4; }
+
+  /* ── Settings Panel ── */
+  #settings-panel { padding: 28px; gap: 20px; overflow-y: auto; }
+  .settings-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .settings-group-title {
+    padding: 12px 18px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: rgba(0,212,255,0.04);
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 13px; color: var(--text); }
+  .setting-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .setting-control select, .setting-control input[type=text] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    min-width: 160px;
+    font-family: 'Courier New', monospace;
+  }
+  .setting-control select:focus,
+  .setting-control input[type=text]:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.15);
+  }
+  /* Toggle */
+  .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: rgba(0,212,255,0.2); border-color: var(--cyan); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: var(--cyan); }
+
+  .save-btn {
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(123,47,255,0.15));
+    border: 1px solid rgba(0,212,255,0.4);
+    border-radius: 10px;
+    color: var(--cyan);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 24px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    align-self: flex-start;
+  }
+  .save-btn:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(123,47,255,0.25));
+    box-shadow: 0 0 20px rgba(0,212,255,0.2);
+  }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--cyan);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,212,255,0.2);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── Grid lines background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #app, #titlebar { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+
+<div id="titlebar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="22"/>
+    </svg>
+    Wispr Clone
+  </div>
+  <span class="version">v1.0.0 · NEURALNAUTIC</span>
+</div>
+
+<div id="app">
+  <nav id="sidebar">
+    <button class="nav-btn active" onclick="showPanel('status')" title="Status">◉</button>
+    <button class="nav-btn" onclick="showPanel('history')" title="Verlauf">≡</button>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn" onclick="showPanel('settings')" title="Einstellungen">⚙</button>
+  </nav>
+
+  <div id="content">
+
+    <!-- STATUS -->
+    <div class="panel active" id="status-panel">
+      <p class="panel-title">Live Status</p>
+
+      <div class="status-card">
+        <div class="status-orb idle" id="status-orb">🎙</div>
+        <div class="status-info">
+          <h2 id="status-text">BEREIT</h2>
+          <p id="status-sub">Halte den Hotkey gedrückt um zu sprechen</p>
+        </div>
+        <div class="hotkey-badge" id="hotkey-display">Ctrl+Shift+Space</div>
+      </div>
+
+      <div class="wave-card">
+        <p class="panel-title" style="margin-bottom:12px">Audio Signal</p>
+        <canvas id="waveform"></canvas>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-label">Transkriptionen</span>
+          <span class="stat-value" id="stat-count">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Modell</span>
+          <span class="stat-value green" id="stat-model" style="font-size:16px;margin-top:4px">base</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Sprache</span>
+          <span class="stat-value purple" id="stat-lang" style="font-size:16px;margin-top:4px">DE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="panel" id="history-panel">
+      <p class="panel-title">Transkript-Verlauf</p>
+      <div class="history-list" id="history-list">
+        <div class="empty-state" id="empty-state">
+          <span class="icon">🎙</span>
+          <span>Noch keine Transkriptionen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="settings-panel">
+      <p class="panel-title">Einstellungen</p>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Aufnahme</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Hotkey</div>
+            <div class="setting-desc">Halten zum Aufnehmen</div>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="cfg-hotkey" value="&lt;ctrl&gt;+&lt;shift&gt;+space">
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Whisper Modell</div>
+            <div class="setting-desc">Größer = genauer, aber langsamer</div>
+          </div>
+          <div class="setting-control">
+            <select id="cfg-model">
+              <option value="tiny">tiny (75 MB, schnell)</option>
+              <option value="base" selected>base (150 MB, gut)</option>
+              <option value="small">small (460 MB, besser)</option>
+              <option value="medium">medium (1.5 GB, sehr gut)</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Sprache</div>
+            <div class="setting-desc">null = automatisch erkennen</div>
+          </div>
+          <div class="setting-control">
+            <select id="cfg-language">
+              <option value="de" selected>Deutsch</option>
+              <option value="en">Englisch</option>
+              <option value="">Auto-Detect</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">KI-Bereinigung</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">KI-Bereinigung aktivieren</div>
+            <div class="setting-desc">Füllwörter entfernen via Groq</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="cfg-ai-cleanup">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Groq API Key</div>
+            <div class="setting-desc">console.groq.com (kostenlos)</div>
+          </div>
+          <div class="setting-control">
+            <input type="text" id="cfg-groq-key" placeholder="gsk_...">
+          </div>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveSettings()">SPEICHERN</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──
+let history = [];
+let waveData = new Array(60).fill(0);
+let statusState = 'idle';
+
+// ── Navigation ──
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(name + '-panel').classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Status updates (called from Python) ──
+window.updateStatus = function(state, sub) {
+  statusState = state;
+  const orb  = document.getElementById('status-orb');
+  const text = document.getElementById('status-text');
+  const subEl= document.getElementById('status-sub');
+  orb.className = 'status-orb ' + state;
+  if (state === 'idle') {
+    orb.textContent = '🎙';
+    text.textContent = 'BEREIT';
+    text.style.color = '';
+  } else if (state === 'recording') {
+    orb.textContent = '🔴';
+    text.textContent = 'AUFNAHME';
+    text.style.color = '#ff3366';
+  } else if (state === 'processing') {
+    orb.textContent = '⚡';
+    text.textContent = 'VERARBEITUNG';
+    text.style.color = '#00d4ff';
+  }
+  if (sub) subEl.textContent = sub;
+};
+
+// ── Add transcript (called from Python) ──
+window.addTranscript = function(text, timestamp) {
+  history.unshift({ text, time: timestamp });
+  const count = document.getElementById('stat-count');
+  count.textContent = history.length;
+  renderHistory();
+};
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('empty-state');
+  if (history.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+  // Remove old items (keep empty state)
+  list.querySelectorAll('.history-item').forEach(el => el.remove());
+  history.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.innerHTML = `
+      <span class="history-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="history-text">${escHtml(item.text)}</span>
+      <span class="history-time">${item.time}</span>
+      <span class="copy-hint">kopieren ⎘</span>
+    `;
+    el.onclick = () => copyText(item.text);
+    list.appendChild(el);
+  });
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).catch(() => {});
+  showToast('In Zwischenablage kopiert');
+}
+
+// ── Waveform ──
+const canvas = document.getElementById('waveform');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+window.updateWaveform = function(level) {
+  waveData.shift();
+  waveData.push(Math.min(1, Math.max(0, level)));
+};
+
+function drawWaveform() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const barW = (w / waveData.length) - 2;
+  const isRec = statusState === 'recording';
+  const color = isRec ? '#ff3366' : (statusState === 'processing' ? '#00d4ff' : '#1a3a5c');
+  const glowColor = isRec ? 'rgba(255,51,102,0.5)' : 'rgba(0,212,255,0.5)';
+
+  if (isRec || statusState === 'processing') {
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = glowColor;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+
+  waveData.forEach((v, i) => {
+    const x = i * (barW + 2);
+    const barH = Math.max(3, v * h * 0.85);
+    const y = (h - barH) / 2;
+    const alpha = 0.3 + v * 0.7;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  requestAnimationFrame(drawWaveform);
+}
+drawWaveform();
+
+// ── Settings ──
+window.loadConfig = function(cfg) {
+  document.getElementById('cfg-hotkey').value  = cfg.hotkey || '';
+  document.getElementById('cfg-model').value   = cfg.whisper_model || 'base';
+  document.getElementById('cfg-language').value= cfg.language || '';
+  document.getElementById('cfg-ai-cleanup').checked = !!cfg.ai_cleanup;
+  document.getElementById('cfg-groq-key').value= cfg.groq_api_key || '';
+  document.getElementById('stat-model').textContent = (cfg.whisper_model || 'base').toUpperCase();
+  document.getElementById('stat-lang').textContent  = (cfg.language || 'AUTO').toUpperCase();
+  document.getElementById('hotkey-display').textContent = formatHotkey(cfg.hotkey || '');
+};
+
+function saveSettings() {
+  const cfg = {
+    hotkey:        document.getElementById('cfg-hotkey').value,
+    whisper_model: document.getElementById('cfg-model').value,
+    language:      document.getElementById('cfg-language').value || null,
+    ai_cleanup:    document.getElementById('cfg-ai-cleanup').checked,
+    groq_api_key:  document.getElementById('cfg-groq-key').value,
+  };
+  if (window.pywebview) {
+    pywebview.api.save_config(JSON.stringify(cfg));
+  }
+  document.getElementById('stat-model').textContent = cfg.whisper_model.toUpperCase();
+  document.getElementById('stat-lang').textContent  = (cfg.language || 'AUTO').toUpperCase();
+  document.getElementById('hotkey-display').textContent = formatHotkey(cfg.hotkey);
+  showToast('Einstellungen gespeichert ✓');
+}
+
+function formatHotkey(hk) {
+  return hk.replace(/<(\w+)>/g, (_, k) => k.charAt(0).toUpperCase() + k.slice(1))
+           .replace(/\+/g, ' + ');
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Idle waveform simulation ──
+setInterval(() => {
+  if (statusState === 'idle') {
+    window.updateWaveform(Math.random() * 0.08);
+  }
+}, 80);
+
+// ── Util ──
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Notify Python that UI is ready
+window.addEventListener('pywebviewready', () => {
+  pywebview.api.ui_ready();
+});
+</script>
+</body>
+</html>
