@@ -77,7 +77,9 @@ def start(app_instance):
     global _window, _app_ref
     _app_ref = app_instance
 
-    html_path = os.path.join(os.path.dirname(__file__), "dashboard", "index.html")
+    import sys
+    base = sys._MEIPASS if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+    html_path = os.path.join(base, "dashboard", "index.html")
     api = Api()
 
     _window = webview.create_window(
