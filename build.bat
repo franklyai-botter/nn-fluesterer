@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  WisprClone - EXE Build
+echo  NNFluesterer - EXE Build
 echo ========================================
 
 :: Autostart vorher entfernen falls aktiv
@@ -11,7 +11,7 @@ if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
 
 :: EXE bauen
-pyinstaller WisprClone.spec --clean
+pyinstaller NNFluesterer.spec --clean
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -23,11 +23,11 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo ========================================
 echo  Build erfolgreich!
-echo  EXE: dist\WisprClone.exe
+echo  EXE: dist\NNFluesterer.exe
 echo ========================================
 
 :: Autostart mit neuer EXE einrichten
-dist\WisprClone.exe 2>nul & python autostart.py install
+dist\NNFluesterer.exe 2>nul & python autostart.py install
 
 echo.
 echo Autostart eingerichtet.

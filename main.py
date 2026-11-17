@@ -1,5 +1,5 @@
 """
-Wispr Clone — Entry Point
+NN-Flüsterer — Entry Point
 Startet das Dashboard und verbindet alle Komponenten.
 """
 import threading
@@ -16,7 +16,7 @@ import ai_cleanup
 import dashboard
 
 
-class WisprClone:
+class NNFluesterer:
     def __init__(self):
         self.conf = cfg.load()
         self.recorder = Recorder(sample_rate=self.conf["recording"]["sample_rate"])
@@ -35,7 +35,7 @@ class WisprClone:
     def on_hotkey_press(self):
         if self._processing:
             return
-        print("[Wispr] Aufnahme gestartet ...")
+        print("[NN-Flüsterer] Aufnahme gestartet ...")
         dashboard.set_status("recording", "Spreche jetzt ...")
         self.recorder.start()
         self._start_wave_feed()
@@ -43,21 +43,21 @@ class WisprClone:
     def on_hotkey_release(self):
         self._stop_wave_feed()
         dashboard.set_status("processing", "Transkribiere ...")
-        print("[Wispr] Aufnahme gestoppt, transkribiere ...")
+        print("[NN-Flüsterer] Aufnahme gestoppt, transkribiere ...")
 
         audio = self.recorder.stop()
         min_dur = self.conf["recording"]["min_duration"]
         sr = self.conf["recording"]["sample_rate"]
 
         if audio.size < int(min_dur * sr):
-            print("[Wispr] Aufnahme zu kurz, ignoriert.")
+            print("[NN-Flüsterer] Aufnahme zu kurz, ignoriert.")
             dashboard.set_status("idle", "Halte den Hotkey gedrückt um zu sprechen")
             return
 
         self._processing = True
         try:
             text = self.transcriber.transcribe(audio, sr)
-            print(f"[Wispr] Transkript: {text!r}")
+            print(f"[NN-Flüsterer] Transkript: {text!r}")
 
             if self.conf.get("ai_cleanup") and self.conf.get("groq_api_key"):
                 text = ai_cleanup.cleanup(
@@ -65,7 +65,7 @@ class WisprClone:
                     api_key=self.conf["groq_api_key"],
                     language=self.conf.get("language", "de"),
                 )
-                print(f"[Wispr] Nach KI-Bereinigung: {text!r}")
+                print(f"[NN-Flüsterer] Nach KI-Bereinigung: {text!r}")
 
             if text:
                 inject(text)
@@ -92,7 +92,7 @@ class WisprClone:
         self._wave_active = False
 
     def run(self):
-        print("[Wispr] Gestartet. Hotkey:", self.conf["hotkey"])
+        print("[NN-Flüsterer] Gestartet. Hotkey:", self.conf["hotkey"])
 
         listener = HotkeyListener(
             hotkey_str=self.conf["hotkey"],
@@ -107,9 +107,9 @@ class WisprClone:
             dashboard.start(self)
         finally:
             listener.stop()
-            print("[Wispr] Beendet.")
+            print("[NN-Flüsterer] Beendet.")
 
 
 if __name__ == "__main__":
-    app = WisprClone()
+    app = NNFluesterer()
     app.run()

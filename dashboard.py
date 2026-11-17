@@ -11,7 +11,7 @@ import config as cfg
 
 
 _window: webview.Window | None = None
-_app_ref = None  # Referenz auf WisprClone-Instanz
+_app_ref = None  # Referenz auf NNFluesterer-Instanz
 
 
 class Api:
@@ -83,7 +83,7 @@ def start(app_instance):
     api = Api()
 
     _window = webview.create_window(
-        title="Wispr Clone",
+        title="NN-Flüsterer",
         url=f"file:///{html_path.replace(os.sep, '/')}",
         js_api=api,
         width=960,

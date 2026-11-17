@@ -1,6 +1,6 @@
 """
 Autostart einrichten oder entfernen.
-Legt einen Registry-Eintrag an damit Wispr Clone mit Windows startet.
+Legt einen Registry-Eintrag an damit NN-Flüsterer mit Windows startet.
 
 Verwendung:
   python autostart.py install    -> Autostart aktivieren
@@ -11,7 +11,7 @@ import sys
 import os
 import winreg
 
-APP_NAME = "WisprClone"
+APP_NAME = "NNFluesterer"
 REG_KEY  = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
 
